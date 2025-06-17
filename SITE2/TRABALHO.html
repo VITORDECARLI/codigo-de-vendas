@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Calculadora de Orçamento com Armazenamento Local</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f7f9fc;
+      color: #333;
+      margin: 0;
+      padding: 0 1rem;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding-top: 40px;
+    }
+    main {
+      background: white;
+      max-width: 700px;
+      width: 100%;
+      padding: 2rem 3rem;
+      border-radius: 12px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.1);
+      margin-bottom: 40px;
+    }
+    h1, h2 {
+      text-align: center;
+      color: #1a73e8;
+      margin-bottom: 1.5rem;
+      font-weight: 700;
+    }
+    label {
+      display: block;
+      margin-bottom: 0.6rem;
+      font-weight: 600;
+      color: #555;
+    }
+    select, input[type="text"], input[type="number"] {
+      width: 100%;
+      padding: 0.5rem 0.75rem;
+      border: 1.5px solid #ccc;
+      border-radius: 6px;
+      font-size: 1rem;
+      transition: border-color 0.3s;
+    }
+    select:focus, input[type="text"]:focus, input[type="number"]:focus {
+      border-color: #1a73e8;
+      outline: none;
+    }
+    .hidden {
+      display: none;
+    }
+    button {
+      margin-top: 1.8rem;
+      background-color: #1a73e8;
+      border: none;
+      padding: 0.75rem 2rem;
+      color: white;
+      font-size: 1.1rem;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+      font-weight: 600;
+      display: block;
+      width: 100%;
+    }
+    button:hover {
+      background-color: #155ab6;
+    }
+    .resultado {
+      margin-top: 2rem;
+      background: #e8f0fe;
+      padding: 1.5rem 2rem;
+      border-radius: 10px;
+      border-left: 5px solid #1a73e8;
+      font-size: 1rem;
+      line-height: 1.5;
+      color: #202124;
+      white-space: pre-wrap;
+      position: relative;
+    }
+    .erro {
+      color: #d93025;
+      font-weight: 700;
+      margin-top: 1rem;
+    }
+    #orcamentosSalvos {
+      max-width: 700px;
+      margin: 0 auto 50px auto;
+      background: white;
+      padding: 1rem 2rem;
+      border-radius: 12px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.1);
+    }
+    #orcamentosSalvos h2 {
+      margin-top: 0;
+    }
+    .orcamentoItem {
+      border-bottom: 1px solid #ddd;
+      padding: 0.8rem 0;
+      font-size: 0.95rem;
+      color: #444;
+      white-space: pre-wrap;
+    }
+    .semOrcamentos {
+      color: #888;
+      text-align: center;
+      font-style: italic;
+    }
+    .btn-limpar {
+      background-color: #d93025;
+      margin-top: 1rem;
+      width: auto;
+      padding: 0.5rem 1rem;
+      font-size: 0.9rem;
+      border-radius: 6px;
+      display: inline-block;
+    }
+    .btn-limpar:hover {
+      background-color: #a5231a;
+    }
+    @media (max-width: 480px) {
+      main {
+        padding: 1.2rem 1.5rem;
+      }
+      button {
+        font-size: 1rem;
+      }
+      #orcamentosSalvos {
+        padding: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Calculadora de Orçamento</h1>
+
+    <label for="tipoServico">Tipo de Serviço:</label>
+    <select id="tipoServico" onchange="mostrarCampos()">
+      <option value="">-- Selecione --</option>
+      <option value="interpretacao">Interpretação</option>
+      <option value="traducao">Tradução</option>
+    </select>
+
+    <!-- Formulário Interpretação -->
+    <div id="formInterpretacao" class="hidden" aria-hidden="true" style="margin-top: 1rem;">
+      <label for="nomeEvento">Nome do Evento:</label>
+      <input type="text" id="nomeEvento" placeholder="Digite o nome do evento" />
+
+      <label for="tipoEvento" style="margin-top: 1rem;">Tipo do Evento:</label>
+      <select id="tipoEvento">
+        <option value="juridico">Jurídico</option>
+        <option value="educacao">Educação</option>
+        <option value="artistico">Artístico/Cultural</option>
+        <option value="video">Vídeo Conferência</option>
+      </select>
+
+      <label for="tempoEvento" style="margin-top: 1rem;">Tempo do Evento (minutos):</label>
+      <input type="number" id="tempoEvento" min="1" placeholder="Ex: 90" />
+
+      <label for="gravado" style="margin-top: 1rem;">Ficará Gravado?</label>
+      <select id="gravado">
+        <option value="nao">Não</option>
+        <option value="sim">Sim</option>
+      </select>
+
+      <label for="endereco" style="margin-top: 1rem;">Endereço:</label>
+      <input type="text" id="endereco" placeholder="Informe o endereço do evento" />
+    </div>
+
+    <!-- Formulário Tradução -->
+    <div id="formTraducao" class="hidden" aria-hidden="true" style="margin-top: 1rem;">
+      <label for="titulo">Título do Material:</label>
+      <input type="text" id="titulo" placeholder="Digite o título do material" />
+
+      <label for="tipoMaterial" style="margin-top: 1rem;">Tipo de Material:</label>
+      <select id="tipoMaterial">
+        <option value="videobook">VideoBook</option>
+        <option value="programa">Programa de TV</option>
+        <option value="propaganda">Propaganda de Marcas</option>
+        <option value="filme">Filme</option>
+        <option value="documentario">Documentário</option>
+      </select>
+
+      <label for="tempoVideo" style="margin-top: 1rem;">Tempo do Vídeo (minutos):</label>
+      <input type="number" id="tempoVideo" min="1" placeholder="Ex: 120" />
+
+      <label for="legendagem" style="margin-top: 1rem;">Legendagem?</label>
+      <select id="legendagem">
+        <option value="nao">Não</option>
+        <option value="sim">Sim</option>
+      </select>
+
+      <label for="edicao" style="margin-top: 1rem;">Edição:</label>
+      <select id="edicao">
+        <option value="simples">Simples</option>
+        <option value="completa">Completa</option>
+      </select>
+
+      <label for="descricao" style="margin-top: 1rem;">Descrição (opcional):</label>
+      <input type="text" id="descricao" placeholder="Informações adicionais" />
+    </div>
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Calculadora de Orçamento Tradução e Interpretação</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 20px;
+      background: #f0f0f5;
+      color: #333;
+    }
+    main, section {
+      background: white;
+      padding: 15px 20px;
+      margin-bottom: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgb(0 0 0 / 0.1);
+    }
+    label {
+      display: block;
+      margin: 10px 0 5px;
+    }
+    input, select, textarea, button {
+      width: 100%;
+      padding: 8px 10px;
+      font-size: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      box-sizing: border-box;
+    }
+    button {
+      cursor: pointer;
+      background-color: #005ea2;
+      color: white;
+      font-weight: 600;
+      border: none;
+      margin-top: 15px;
+    }
+    button:hover {
+      background-color: #00497a;
+    }
+    .hidden {
+      display: none;
+    }
+    .resultado {
+      white-space: pre-wrap;
+      background: #e8f0fe;
+      border: 1px solid #b3d1ff;
+      padding: 15px;
+      border-radius: 6px;
+      margin-top: 20px;
+      font-family: monospace;
+      font-size: 1rem;
+    }
+    .erro {
+      color: red;
+      font-weight: bold;
+    }
+    .orcamentoItem {
+      background: #f9f9f9;
+      padding: 10px;
+      margin-bottom: 10px;
+      border-radius: 5px;
+      white-space: pre-wrap;
+      font-family: monospace;
+      font-size: 0.9rem;
+      border: 1px solid #ccc;
+    }
+    .btn-limpar {
+      background-color: #d9534f;
+      margin-top: 10px;
+    }
+    .btn-limpar:hover {
+      background-color: #c9302c;
+    }
+  </style>
+</head>
+<body>
+
+<main>
+  <h1>Calculadora de Orçamento</h1>
+
+  <label for="tipoServico">Tipo de Serviço:</label>
+  <select id="tipoServico" onchange="mostrarCampos()" aria-describedby="descTipoServico">
+    <option value="">-- Selecione --</option>
+    <option value="interpretacao">Interpretação</option>
+    <option value="traducao">Tradução</option>
+  </select>
+  <small id="descTipoServico">Escolha o tipo de serviço para aparecer os campos correspondentes.</small>
+
+  <!-- Formulário Interpretação -->
+  <div id="formInterpretacao" class="hidden" aria-hidden="true" style="margin-top: 15px;">
+    <label for="nomeEvento">Nome do Evento:</label>
+    <input type="text" id="nomeEvento" />
+
+    <label for="tipoEvento">Tipo do Evento:</label>
+    <select id="tipoEvento">
+      <option value="">-- Selecione --</option>
+      <option value="juridico">Jurídico</option>
+      <option value="educacao">Educação</option>
+      <option value="artistico">Artístico/Cultural</option>
+      <option value="videoconferencia">Vídeo Conferência</option>
+    </select>
+
+    <label for="tempoEvento">Tempo do Evento (minutos):</label>
+    <input type="number" id="tempoEvento" min="1" />
+
+    <label for="gravado">Ficará Gravado?</label>
+    <select id="gravado">
+      <option value="nao">Não</option>
+      <option value="sim">Sim</option>
+    </select>
+
+    <label for="endereco">Endereço:</label>
+    <input type="text" id="endereco" />
+  </div>
+
+  <!-- Formulário Tradução -->
+  <div id="formTraducao" class="hidden" aria-hidden="true" style="margin-top: 15px;">
+    <label for="titulo">Título do Material:</label>
+    <input type="text" id="titulo" />
+
+    <label for="tipoMaterial">Tipo de Material:</label>
+    <select id="tipoMaterial">
+      <option value="">-- Selecione --</option>
+      <option value="videobook">VideoBook</option>
+      <option value="programa_tv">Programa de TV</option>
+      <option value="propaganda">Propaganda de Marcas</option>
+      <option value="filme">Filme</option>
+      <option value="documentario">Documentário</option>
+    </select>
+
+    <label for="tempoVideo">Tempo do Vídeo (minutos):</label>
+    <input type="number" id="tempoVideo" min="1" />
+
+    <label for="legendagem">Legendagem:</label>
+    <select id="legendagem">
+      <option value="nao">Não</option>
+      <option value="sim">Sim</option>
+    </select>
+
+    <label for="edicao">Edição:</label>
+    <select id="edicao">
+      <option value="simples">Simples</option>
+      <option value="completa">Completa</option>
+    </select>
+
+    <label for="descricao">Descrição (opcional):</label>
+    <textarea id="descricao" rows="3"></textarea>
+  </div>
+
+  <button onclick="calcular()">Calcular Orçamento</button>
+  <button id="btnSalvar" class="hidden" onclick="salvarOrcamento()">Salvar Orçamento</button>
+
+  <div id="resultado" class="resultado" role="region" aria-live="polite" style="display:none;"></div>
+</main>
+
+<section id="orcamentosSalvos" aria-label="Orçamentos Salvos" style="display:none;">
+  <h2>Orçamentos Salvos</h2>
+  <div id="listaOrcamentos" aria-live="polite"></div>
+  <button class="btn-limpar" onclick="limparOrcamentos()">Limpar Orçamentos</button>
+</section>
+
+<script>
+  let ultimoOrcamento = null;
+
+  // Mostrar/ocultar formulários de acordo com o serviço selecionado
+  function mostrarCampos() {
+    const tipo = document.getElementById('tipoServico').value;
+    const formInt = document.getElementById('formInterpretacao');
+    const formTrad = document.getElementById('formTraducao');
+    const resultado = document.getElementById('resultado');
+    const btnSalvar = document.getElementById('btnSalvar');
+
+    if (tipo === 'interpretacao') {
+      formInt.style.display = 'block';
+      formInt.setAttribute('aria-hidden', 'false');
+      formTrad.style.display = 'none';
+      formTrad.setAttribute('aria-hidden', 'true');
+    } else if (tipo === 'traducao') {
+      formTrad.style.display = 'block';
+      formTrad.setAttribute('aria-hidden', 'false');
+      formInt.style.display = 'none';
+      formInt.setAttribute('aria-hidden', 'true');
+    } else {
+      formInt.style.display = 'none';
+      formInt.setAttribute('aria-hidden', 'true');
+      formTrad.style.display = 'none';
+      formTrad.setAttribute('aria-hidden', 'true');
+    }
+    resultado.style.display = 'none';
+    resultado.innerText = '';
+    btnSalvar.style.display = 'none';
+    ultimoOrcamento = null;
+  }
+
+  // Formatação de moeda
+  function formatCurrency(value) {
+    return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  }
+
+  // Capitaliza a primeira letra e deixa o resto minúsculo
+  function capitalizar(texto) {
+    if (!texto) return '';
+    return texto.charAt(0).toUpperCase() + texto.slice(1).toLowerCase();
+  }
+
+  // Mapas para nomes legíveis
+  const nomesEventos = {
+    juridico: 'Jurídico',
+    educacao: 'Educação',
+    artistico: 'Artístico/Cultural',
+    videoconferencia: 'Vídeo Conferência'
+  };
+
+  const nomesMaterial = {
+    videobook: 'VideoBook',
+    programa_tv: 'Programa de TV',
+    propaganda: 'Propaganda de Marcas',
+    filme: 'Filme',
+    documentario: 'Documentário'
+  };
+
+  function calcular() {
+    const tipo = document.getElementById('tipoServico').value;
+    const resultado = document.getElementById('resultado');
+    const btnSalvar = document.getElementById('btnSalvar');
+    resultado.style.display = 'block';
+
+    if (!tipo) {
+      resultado.innerHTML = '<p class="erro">Por favor, selecione o tipo de serviço.</p>';
+      btnSalvar.style.display = 'none';
+      return;
+    }
+
+    if (tipo === 'interpretacao') {
+      // Captura dos dados
+      const nomeEvento = document.getElementById('nomeEvento').value.trim();
+      const tipoEvento = document.getElementById('tipoEvento').value;
+      const tempoEvento = Number(document.getElementById('tempoEvento').value);
+      const gravado = document.getElementById('gravado').value === 'sim';
+      const endereco = document.getElementById('endereco').value.trim();
+
+      // Validações
+      if (!nomeEvento) {
+        resultado.innerHTML = '<p class="erro">Informe o nome do evento.</p>';
+        btnSalvar.style.display = 'none';
+        return;
+      }
+      if (!tipoEvento || !(tipoEvento in nomesEventos)) {
+        resultado.innerHTML = '<p class="erro">Selecione um tipo de evento válido.</p>';
+        btnSalvar.style.display = 'none';
+        return;
+      }
+      if (!tempoEvento || tempoEvento <= 0) {
+        resultado.innerHTML = '<p class="erro">Informe o tempo do evento em minutos (maior que zero).</p>';
+        btnSalvar.style.display = 'none';
+        return;
+      }
+      if (!endereco) {
+        resultado.innerHTML = '<p class="erro">Informe o endereço do evento.</p>';
+        btnSalvar.style.display = 'none';
+        return;
+      }
+
+      // Valor da hora base
+      let valorHora;
+      if (tipoEvento === 'artistico') {
+        valorHora = 192;
+      } else {
+        valorHora = 144;
+      }
+
+      // Quantidade de profissionais
+      let qtdProfissionais = 1;
+      if (tempoEvento > 60 && tempoEvento < 360) {
+        qtdProfissionais = 2;
+      } else if (tempoEvento >= 360) {
+        // 2 profissionais para 360 minutos + 1 para cada múltiplo de 360 minutos adicionais
+        const adicionais = Math.floor((tempoEvento - 360) / 360);
+        qtdProfissionais = 2 + adicionais;
+
+        // Ajuste valorHora para não artístico quando tempo >= 360
+        if (tipoEvento !== 'artistico') {
+          valorHora = 130;
+        }
+      }
+
+      const horas = tempoEvento / 60;
+      const valorTotalHoras = valorHora * qtdProfissionais * horas;
+
+      // Direito de imagem (10% se gravado)
+      const direitoImagem = gravado ? valorTotalHoras * 0.10 : 0;
+
+      // Total + direito de imagem
+      const valorTotal = valorTotalHoras + direitoImagem;
+
+      // Impostos 15,5%
+      const impostos = valorTotal * 0.155;
+
+      const textoResultado = `
+Resultado - Interpretação
+Nome do Evento: ${nomeEvento}
+Tipo do Evento: ${nomesEventos[tipoEvento]}
+Valor da hora por intérprete: ${formatCurrency(valorHora)}
+Quantidade de intérpretes: ${qtdProfissionais}
+Tempo total em horas: ${horas.toFixed(2)} h
+Valor total das horas: ${formatCurrency(valorTotalHoras)}
+Acréscimo por direito de imagem (10%): ${formatCurrency(direitoImagem)}
+Valor total a ser pago: ${formatCurrency(valorTotal)}
+Impostos (15,5%): ${formatCurrency(impostos)}
+Endereço: ${endereco}
+      `;
+
+      resultado.innerText = textoResultado.trim();
+      btnSalvar.style.display = 'block';
+
+      ultimoOrcamento = {
+        tipo: 'Interpretação',
+        resumo: textoResultado.trim(),
+        data: new Date().toLocaleString('pt-BR')
+      };
+
+    } else if (tipo === 'traducao') {
+      // Captura dos dados
+      const titulo = document.getElementById('titulo').value.trim();
+      const tipoMaterial = document.getElementById('tipoMaterial').value;
+      const tempoVideo = Number(document.getElementById('tempoVideo').value);
+      const legendagem = document.getElementById('legendagem').value === 'sim';
+      const edicao = document.getElementById('edicao').value;
+      const descricao = document.getElementById('descricao').value.trim();
+
+      // Validações
+      if (!titulo) {
+        resultado.innerHTML = '<p class="erro">Informe o título do material.</p>';
+        btnSalvar.style.display = 'none';
+        return;
+      }
+      if (!tipoMaterial || !(tipoMaterial in nomesMaterial)) {
+        resultado.innerHTML = '<p class="erro">Selecione um tipo de material válido.</p>';
+        btnSalvar.style.display = 'none';
+        return;
+      }
+      if (!tempoVideo || tempoVideo <= 0) {
+        resultado.innerHTML = '<p class="erro">Informe o tempo do vídeo em minutos (maior que zero).</p>';
+        btnSalvar.style.display = 'none';
+        return;
+      }
+
+      // Valor por minuto
+      let valorMinuto = 0;
+      // Tradução de filmes, documentário e videoBooks custa R$ 60/min
+      // Se legendagem custa R$ 96/min
+      // Propaganda custa R$ 250/min
+      if (tipoMaterial === 'propaganda') {
+        valorMinuto = 250;
+      } else if (legendagem) {
+        valorMinuto = 96;
+      } else {
+        valorMinuto = 60;
+      }
+
+      const valorBase = valorMinuto * tempoVideo;
+
+      // Direito de imagem 30%
+      const direitoImagem = valorBase * 0.30;
+
+      const valorTotal = valorBase + direitoImagem;
+
+      // Impostos 15,5%
+      const impostos = valorTotal * 0.155;
+
+      let textoResultado = `
+Resultado - Tradução
+Título do Material: ${titulo}
+Tipo de Material: ${nomesMaterial[tipoMaterial]}
+Valor por minuto: ${formatCurrency(valorMinuto)}
+Tempo total: ${tempoVideo} minutos
+Legendagem: ${legendagem ? 'Sim' : 'Não'}
+Edição: ${capitalizar(edicao)}
+${descricao ? 'Descrição: ' + descricao + '\n' : ''}
+Valor base: ${formatCurrency(valorBase)}
+Acréscimo por direito de imagem (30%): ${formatCurrency(direitoImagem)}
+Valor total a ser pago: ${formatCurrency(valorTotal)}
+Impostos (15,5%): ${formatCurrency(impostos)}
+      `;
+
+      resultado.innerText = textoResultado.trim();
+      btnSalvar.style.display = 'block';
+
+      ultimoOrcamento = {
+        tipo: 'Tradução',
+        resumo: textoResultado.trim(),
+        data: new Date().toLocaleString('pt-BR')
+      };
+    } else {
+      resultado.innerHTML = '<p class="erro">Selecione um tipo de serviço válido.</p>';
+      btnSalvar.style.display = 'none';
+      ultimoOrcamento = null;
+    }
+  }
+
+  // Salvar orçamento no localStorage
+  function salvarOrcamento() {
+    if (!ultimoOrcamento) return;
+
+    let orcamentos = JSON.parse(localStorage.getItem('orcamentos')) || [];
+    orcamentos.push(ultimoOrcamento);
+    localStorage.setItem('orcamentos', JSON.stringify(orcamentos));
+
+    alert('Orçamento salvo com sucesso!');
+    mostrarOrcamentos();
+    document.getElementById('btnSalvar').style.display = 'none';
+  }
+
+  // Mostrar orçamentos salvos
+  function mostrarOrcamentos() {
+    const secao = document.getElementById('orcamentosSalvos');
+    const lista = document.getElementById('listaOrcamentos');
+    let orcamentos = JSON.parse(localStorage.getItem('orcamentos')) || [];
+
+    if (orcamentos.length === 0) {
+      secao.style.display = 'none';
+      lista.innerHTML = '<p class="semOrcamentos">Nenhum orçamento salvo ainda.</p>';
+      return;
+    }
+
+    secao.style.display = 'block';
+
+    lista.innerHTML = '';
+    orcamentos.forEach((orc, i) => {
+      const div = document.createElement('div');
+      div.className = 'orcamentoItem';
+      div.tabIndex = 0; // acessibilidade
+      div.innerText = `#${i + 1} - ${orc.tipo} (${orc.data})\n${orc.resumo}`;
+      lista.appendChild(div);
+    });
+  }
+
+  // Limpar orçamentos salvos
+  function limparOrcamentos() {
+    if (confirm('Tem certeza que deseja limpar todos os orçamentos salvos?')) {
+      localStorage.removeItem('orcamentos');
+      mostrarOrcamentos();
+    }
+  }
+
+  // Inicializar exibindo orçamentos salvos ao carregar a página
+  window.onload = function () {
+    mostrarOrcamentos();
+  };
+</script>
+
+</body>
+</html>
